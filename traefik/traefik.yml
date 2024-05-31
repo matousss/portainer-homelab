@@ -1,0 +1,113 @@
+# Traefik v3
+
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+# (Optional) Log information
+# ---
+log:
+  level: DEBUG  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+#   format: common  # common, json, logfmt
+#   filePath: /var/log/traefik/traefik.log
+
+# (Optional) Accesslog
+# ---
+accesslog:
+  format: common  # common, json, logfmt
+  # filePath: /var/log/traefik/access.log
+
+# (Optional) Enable API and Dashboard
+# ---
+api:
+  dashboard: true  # true by default
+  insecure: true  # Don't do this in production!
+
+# Entry Points configuration
+# ---
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          priority: 50 # for bypassing
+
+  websecure:
+    address: ":443"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32" # localhost
+        - "10.0.0.0/8" # swarm mode ip range
+        - "192.168.0.0/16" # stand-alone after 172.16.0.0/12 is exhausted
+        - "172.16.0.0/12" # stand-alone
+
+
+# Configure your CertificateResolver here...
+# ---
+certificatesResolvers:
+  staging:
+    acme:
+      email: your.email.goes@here
+      storage: /etc/traefik/certs/acme_staging.json
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: web
+
+  letsencrypt:
+    acme:
+      email: your.email.goes@here
+      storage: /etc/traefik/certs/acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: web
+
+# (Optional) Overwrite Default Certificates
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/_wildcard.lan.pem
+        keyFile: /etc/traefik/certs/_wildcard.lan-key.pem
+# (Optional) Disable TLS version 1.0 and 1.1
+#   options:
+#     default:
+#       minVersion: VersionTLS12
+
+providers:
+  docker:
+    exposedByDefault: false  # Default is true
+    watch: true
+    network: proxy
+  file:
+    # watch for dynamic configuration changes
+    directory: /etc/traefik
+    watch: true
+
+metrics:
+#  prometheus: {}
+
+http:
+  routers:
+  # proxing for services running in host mode or bare-metal
+    esphome:
+      rule: "Host(`esphome.lan`)"
+      service: esphome
+      entryPoints: websecure
+      tls: true
+    homeassistant:
+      rule: "Host(`home.lan`)"
+      service: homeassistant
+      entryPoints: websecure
+      tls: true
+  services:
+    esphome:
+      loadBalancer:
+        servers:
+          - url: "http://172.17.0.1:6052"
+    homeassistant:
+      loadBalancer:
+        servers:
+          - url: "http://172.17.0.1:8123"

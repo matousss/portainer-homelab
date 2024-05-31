@@ -1,0 +1,22 @@
+services:
+  reverse-proxy:
+    image: traefik:v3.0
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # traefik ui and api
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_ROOT}/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ${DATA_ROOT}/traefik/certs:/etc/traefik/certs
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          # route traffic towards local services internally
+          - cloud.example.com
+          - collabora.example.com
+networks:
+  default:
+    name: proxy

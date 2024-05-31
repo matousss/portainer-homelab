@@ -1,0 +1,33 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DATA_ROOT}/portainer/data:/data
+    # ports:
+    #   - 9000:9000
+    labels:
+      - "traefik.enable=true"
+      # Frontend
+      - "traefik.http.routers.portainer-frontend.rule=Host(`PORTAINER_HOST`)"
+      - "traefik.http.routers.portainer-frontend.entrypoints=websecure"
+      - "traefik.http.services.portainer-frontend.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer-frontend.service=portainer-frontend"
+      - "traefik.http.routers.portainer-frontend.tls.certresolver=letsencrypt"
+
+      # Edge
+      - "traefik.http.routers.portainer-edge.rule=Host(`EDGE_HOST`)"
+      - "traefik.http.routers.portainer-edge.entrypoints=websecure"
+      - "traefik.http.services.portainer-edge.loadbalancer.server.port=8000"
+      - "traefik.http.routers.portainer-edge.service=portainer-edge"
+      - "traefik.http.routers.portainer-edge.tls.certresolver=letsencrypt"
+
+networks:
+  default:
+    name: proxy
+    external: true
