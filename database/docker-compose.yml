@@ -6,25 +6,27 @@ services:
     restart: unless-stopped
     ports:
       - 9082:80
+    links:
+      - mariadb:db
     environment:
-      - PMA_HOST=mariadb # same as service name of db instance
+      - PMA_HOST=mariadb
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     networks:
-      # - proxy
+      - proxy
       - database
-    # you can enable access from the internet if you want
+      - nextcloud
     # labels:
     #   - "traefik.enable=true"
-    #   - "traefik.http.routers.nextcloud-pma.rule=Host(`${PHPMYADMIN_HOST}`)"
+    #   - "traefik.http.routers.nextcloud-pma.rule=Host(`${PMA_HOST}`)"
     #   - "traefik.http.routers.nextcloud-pma.entrypoints=websecure"
     #   - "traefik.http.services.nextcloud-pma.loadbalancer.server.port=80"
     #   - "traefik.http.routers.nextcloud-pma.service=nextcloud-pma"
     #   - "traefik.http.routers.nextcloud-pma.tls.certresolver=letsencrypt"
 
   mariadb:
-    image: mariadb:latest
+    image: lscr.io/linuxserver/mariadb:latest
+    hostname: mariadb
     container_name: mariadb
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -32,17 +34,17 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      # config is misleading, because it contains also the db data
       - ${DATA_ROOT}/mariadb:/config
     networks:
-      - database # add service requiring db access to this network
-      - nextcloud # or you can add networks for each service
+      - database
+      - nextcloud
 
 networks:
-  # proxy: # traefik network
-  #   external: true
+  proxy:
+    external: true
   nextcloud:
     external: true
   database:
     name: database
     driver: bridge
+  
