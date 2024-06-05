@@ -61,7 +61,6 @@ services:
       PHP_MEMORY_LIMIT: 1024M
       PHP_UPLOAD_LIMIT: 100G
       OVERWRITEPROTOCOL: https
-      # you can define these in nextcloud gui
       # SMTP_HOST: ${SMTP_HOST}
       # SMTP_SECURE: ssl
       # SMTP_PORT: ${SMTP_PORT}
@@ -73,14 +72,16 @@ services:
       - redis
     depends_on:
       - redis
+    devices:
+      - /dev/dri
     volumes:
       - ${DATA_ROOT}/nextcloud/data:/var/www/html
+      - ${DATA_ROOT}/nextcloud/ffmpeg:/usr/bin/ffmpeg
       - ${MEDIA}:/media
 
   nextcloud-cron:
-    # This container runs automated jobs
-    # You can run these jobs within one container, but that's not recommended
     image: nextcloud:fpm
+    entrypoint: /cron.sh
     container_name: nextcloud-cron
     restart: unless-stopped
     networks:
@@ -102,13 +103,20 @@ services:
       PHP_MEMORY_LIMIT: 1024M
       PHP_UPLOAD_LIMIT: 100G
       OVERWRITEPROTOCOL: https
+      # SMTP_HOST: ${SMTP_HOST}
+      # SMTP_SECURE: ssl
+      # SMTP_PORT: ${SMTP_PORT}
+      # SMTP_NAME: ${SMTP_NAME}
+      # SMTP_PASSWORD: ${SMTP_PASSWORD}
+      # MAIL_FROM_ADDRESS: ${NEXTCLOUD_MAIL}
       NC_DEFAULT_PHONE_REGION: CZ
     links:
       - redis
+    devices:
+      - /dev/dri
     volumes:
       - ${DATA_ROOT}/nextcloud/data:/var/www/html
-    # IMPORTANT!
-    entrypoint: /cron.sh
+      - ${DATA_ROOT}/nextcloud/ffmpeg:/usr/bin/ffmpeg
     depends_on:
       - nextcloud
 
@@ -126,7 +134,7 @@ services:
       - TZ=${TZ}
       - domain=${COLLABORA_DOMAIN}
       - aliasgroup1=https://${HOST}
-      - dictionaries=${COLLABORA_DICTIONARIES}
+      - dictionaries=en_US,cz_CZ
       - username=${COLLABORA_USER}
       - password=${COLLABORA_PASSWORD}
       - extra_params=--o:ssl.enable=false --o:ssl.termination=true
@@ -151,9 +159,9 @@ services:
       nextcloud:
 
 networks:
-  proxy: # traefik network
+  proxy:
     external: true
-  database: # access to databases
+  database:
     external: true
-  nextcloud: # nextcloud components
+  nextcloud:
     driver: bridge
