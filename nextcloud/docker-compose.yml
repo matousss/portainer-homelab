@@ -35,6 +35,7 @@ services:
       - "traefik.http.middlewares.nextcloud-www-header.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.nextcloud-www-header.headers.browserXssFilter=true"
       - "traefik.http.middlewares.nextcloud-www-header.headers.customRequestHeaders.X-Forwarded-Proto=https"
+
     networks:
       - proxy
       - nextcloud
@@ -78,47 +79,16 @@ services:
       - ${DATA_ROOT}/nextcloud/data:/var/www/html
       - ${DATA_ROOT}/nextcloud/ffmpeg:/usr/bin/ffmpeg
       - ${MEDIA}:/media
+    labels:
+      - "chadburn.enabled=true"
 
-  nextcloud-cron:
-    image: nextcloud:fpm
-    entrypoint: /cron.sh
-    container_name: nextcloud-cron
-    restart: unless-stopped
-    networks:
-      - proxy
-      - database
-      - nextcloud
-    environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
-      MYSQL_DATABASE: ${MYSQL_NEXTCLOUD_DB}
-      MYSQL_USER: ${MYSQL_NEXTCLOUD_USER}
-      MYSQL_PASSWORD: ${MYSQL_NEXTCLOUD_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_HOST: mariadb
-      REDIS_HOST: redis
-      APC_SHM_SIZE: 128M
-      OPCACHE_MEM_SIZE: 128
-      TZ: ${TZ}
-      PHP_MEMORY_LIMIT: 1024M
-      PHP_UPLOAD_LIMIT: 100G
-      OVERWRITEPROTOCOL: https
-      # SMTP_HOST: ${SMTP_HOST}
-      # SMTP_SECURE: ssl
-      # SMTP_PORT: ${SMTP_PORT}
-      # SMTP_NAME: ${SMTP_NAME}
-      # SMTP_PASSWORD: ${SMTP_PASSWORD}
-      # MAIL_FROM_ADDRESS: ${NEXTCLOUD_MAIL}
-      NC_DEFAULT_PHONE_REGION: CZ
-    links:
-      - redis
-    devices:
-      - /dev/dri
-    volumes:
-      - ${DATA_ROOT}/nextcloud/data:/var/www/html
-      - ${DATA_ROOT}/nextcloud/ffmpeg:/usr/bin/ffmpeg
-    depends_on:
-      - nextcloud
+      - "chadburn.job-exec.nextcloud-cron.schedule=@every 5m"
+      - "chadburn.job-exec.nextcloud-cron.command=php -f /var/www/nextcloud/cron.php"
+      - "chadburn.job-exec.nextcloud-corn.user=www-data"
+
+      - "chadburn.job-exec.nextcloud-preview-pre-generate.schedule=@every 10m"
+      - "chadburn.job-exec.nextcloud-preview-pre-generate.command=php occ preview:pre-generate"
+      - "chadburn.job-exec.nextcloud-preview-pre-generate.user=www-data"
 
   collabora:
     image: collabora/code

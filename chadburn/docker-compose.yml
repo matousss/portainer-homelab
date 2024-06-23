@@ -1,0 +1,7 @@
+services:
+  chadburn:
+    container_name: chadburn
+    image: premoweb/chadburn:latest
+    command: daemon
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
