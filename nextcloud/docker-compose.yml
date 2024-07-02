@@ -84,7 +84,7 @@ services:
 
       - "chadburn.job-exec.nextcloud-cron.schedule=@every 5m"
       - "chadburn.job-exec.nextcloud-cron.command=php -f cron.php"
-      - "chadburn.job-exec.nextcloud-corn.user=www-data"
+      - "chadburn.job-exec.nextcloud-cron.user=www-data"
 
       - "chadburn.job-exec.nextcloud-preview-pre-generate.schedule=@every 10m"
       - "chadburn.job-exec.nextcloud-preview-pre-generate.command=php occ preview:pre-generate"
