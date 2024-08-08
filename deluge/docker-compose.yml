@@ -1,0 +1,36 @@
+services:
+  deluge:
+    image: lscr.io/linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - PUID=33
+      - PGID=33
+      - TZ=${TZ}
+      - DELUGE_LOGLEVEL=error #optional
+      - UMASK=002
+    volumes:
+      - ${DATA_ROOT}/deluge/config:/config
+      - ${DATA_ROOT}/deluge/tmp:/tmp
+      - ${DATA_ROOT}/deluge/in_progress:/in_progress
+      - ${DOWNLOADS_FOLDER}:/downloads
+      
+    ports:
+      - 8112:8112
+      - 6881:6881
+      - 6881:6881/udp
+      - 58846:58846 #optional
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deluge.rule=Host(`${DELUGE_HOST}`)"
+      - "traefik.http.routers.deluge.entrypoints=web" # websecure
+      - "traefik.http.routers.deluge.priority=60"
+      # - "traefik.http.routers.deluge.tls=true"
+      # - "traefik.http.routers.deluge.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.deluge.service=deluge"
+      - "traefik.http.services.deluge.loadbalancer.server.port=8112"
+
+networks:
+  default:
+    name: proxy
+    external: true

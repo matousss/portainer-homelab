@@ -1,0 +1,30 @@
+services:
+  pyload-ng:
+    image: lscr.io/linuxserver/pyload-ng:latest
+    container_name: pyload-ng
+    environment:
+      - PUID=33
+      - PGID=33
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - ${DATA_ROOT}/pyload/config:/config
+      - ${DOWNLOADS_FOLDER}:/downloads
+    # ports:
+    #   - 8000:8000
+    #   - 9666:9666
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pyload.rule=Host(`${PYLOAD_HOST}`)"
+      - "traefik.http.routers.pyload.entrypoints=web" # websecure
+      - "traefik.http.routers.pyload.priority=60"
+      - "traefik.http.routers.pyload.service=pyload"
+      # - "traefik.http.routers.deluge.tls=true"
+      # - "traefik.http.routers.deluge.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pyload.loadbalancer.server.port=8000"
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
